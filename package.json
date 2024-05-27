@@ -2,11 +2,13 @@
   "name": "action-linear-release-issue",
   "version": "1.0.0",
   "description": "Create Linear issue for GitHub release",
-  "main": "src/index.js",
+  "author": "Aleksei Tabakman",
+  "homepage": "https://github.com/samosad/action-linear-release-issue",
+  "private": true,
   "scripts": {
     "format:write": "npx prettier --write .",
     "format:check": "npx prettier --check .",
-    "package": "npx ncc build src/index.js -o dist --source-map --license licenses.txt",
+    "package": "npx ncc build src/index.ts -o dist --source-map --license licenses.txt",
     "package:watch": "npm run package -- --watch",
     "release": "release-it",
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -25,13 +27,15 @@
   "engines": {
     "node": ">=20"
   },
-  "author": "Aleksei Tabakman",
   "license": "MIT",
   "dependencies": {
     "@actions/core": "^1.10.1",
-    "@actions/github": "^6.0.0"
+    "@actions/github": "^6.0.0",
+    "@linear/sdk": "^22.0.0",
+    "typescript": "^5.4.5"
   },
   "devDependencies": {
+    "@types/node": "^20.12.12",
     "@vercel/ncc": "^0.38.1",
     "prettier": "^3.2.5",
     "release-it": "^17.3.0"
