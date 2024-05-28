@@ -11,10 +11,135 @@ Object.defineProperty(exports, "__esModule", ({value:!0}));var e=__nccwpck_requi
 
 /***/ }),
 
-/***/ 647:
-/***/ ((module) => {
+/***/ 373:
+/***/ ((__unused_webpack_module, exports) => {
 
-module.exports = eval("require")("@linear/sdk/dist/_generated_documents");
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.LINEAR_ISSUE_REGEX = exports.LINEAR_ATTACHMENT_URL = exports.LINEAR_WORKSPACE = exports.LINEAR_ISSUE_BODY = exports.LINEAR_ISSUE_TITLE = exports.LINEAR_TEMPLATE_ID = exports.LINEAR_TEAM_ID = exports.LINEAR_API_KEY = void 0;
+const { LINEAR_API_KEY, LINEAR_TEAM_ID = '', LINEAR_TEMPLATE_ID, LINEAR_ISSUE_TITLE, LINEAR_ISSUE_BODY = '', LINEAR_WORKSPACE, LINEAR_ATTACHMENT_URL, } = process.env;
+exports.LINEAR_API_KEY = LINEAR_API_KEY;
+exports.LINEAR_TEAM_ID = LINEAR_TEAM_ID;
+exports.LINEAR_TEMPLATE_ID = LINEAR_TEMPLATE_ID;
+exports.LINEAR_ISSUE_TITLE = LINEAR_ISSUE_TITLE;
+exports.LINEAR_ISSUE_BODY = LINEAR_ISSUE_BODY;
+exports.LINEAR_WORKSPACE = LINEAR_WORKSPACE;
+exports.LINEAR_ATTACHMENT_URL = LINEAR_ATTACHMENT_URL;
+const LINEAR_ISSUE_REGEX = /([A-Z]{2,10}-[0-9]{4,6})/g;
+exports.LINEAR_ISSUE_REGEX = LINEAR_ISSUE_REGEX;
+
+
+/***/ }),
+
+/***/ 858:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.createReleaseIssue = void 0;
+const linkIssues_1 = __nccwpck_require__(546);
+const config_1 = __nccwpck_require__(373);
+async function createReleaseIssue(linearClient) {
+    try {
+        const response = await linearClient.createIssue({
+            teamId: config_1.LINEAR_TEAM_ID,
+            title: config_1.LINEAR_ISSUE_TITLE,
+            templateId: config_1.LINEAR_TEMPLATE_ID,
+        });
+        const releaseIssue = await response.issue;
+        if (!releaseIssue) {
+            throw new Error('Issue not found');
+        }
+        console.log('Created release issue:', releaseIssue.identifier, releaseIssue.title);
+        console.log(releaseIssue.url);
+        if (config_1.LINEAR_ISSUE_BODY) {
+            await linearClient.updateIssue(releaseIssue.id, {
+                description: releaseIssue.description +
+                    '\n\n' +
+                    config_1.LINEAR_ISSUE_BODY.replace(config_1.LINEAR_ISSUE_REGEX, `[$1](https://linear.app/${config_1.LINEAR_WORKSPACE}/issue/$1/)`),
+            });
+        }
+        if (config_1.LINEAR_ATTACHMENT_URL) {
+            await linearClient.attachmentLinkURL(releaseIssue.id, config_1.LINEAR_ATTACHMENT_URL, {
+                title: config_1.LINEAR_ISSUE_TITLE,
+            });
+        }
+        await (0, linkIssues_1.linkIssues)(linearClient, releaseIssue);
+    }
+    catch (e) {
+        console.error(`Unable to create release issue, ${e}`);
+    }
+}
+exports.createReleaseIssue = createReleaseIssue;
+
+
+/***/ }),
+
+/***/ 74:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.findIssueByIdentifier = void 0;
+async function findIssueByIdentifier(linearClient, issueIdentifier) {
+    try {
+        const response = await linearClient.client.rawRequest(`
+          query($id: String!) {
+              issue(id: $id) {
+                  id
+              }
+          }
+      `, { id: issueIdentifier });
+        // @ts-ignore
+        return response.data.issue;
+    }
+    catch (error) {
+        console.error('Error finding issue:', error);
+        return null;
+    }
+}
+exports.findIssueByIdentifier = findIssueByIdentifier;
+
+
+/***/ }),
+
+/***/ 546:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.linkIssues = void 0;
+const findIssueByIdentifier_1 = __nccwpck_require__(74);
+const config_1 = __nccwpck_require__(373);
+async function linkIssues(linearClient, releaseIssue) {
+    for (const issueId of config_1.LINEAR_ISSUE_BODY.match(config_1.LINEAR_ISSUE_REGEX) ?? []) {
+        try {
+            const issue = await (0, findIssueByIdentifier_1.findIssueByIdentifier)(linearClient, issueId);
+            if (issue) {
+                await linearClient.createComment({
+                    body: `[${config_1.LINEAR_ISSUE_TITLE}](https://linear.app/${config_1.LINEAR_WORKSPACE}/issue/${releaseIssue.identifier}/)`,
+                    issueId: issue.id,
+                });
+                console.log('Added comment:', issueId);
+                await linearClient.createIssueRelation({
+                    issueId: issue.id,
+                    relatedIssueId: releaseIssue.id,
+                    // @ts-ignore
+                    type: 'related',
+                });
+                console.log('Added related issue:', issueId);
+            }
+        }
+        catch (e) {
+            console.error(`Unable to link linear issue to release, ${e}`);
+        }
+    }
+}
+exports.linkIssues = linkIssues;
 
 
 /***/ }),
@@ -136,91 +261,19 @@ var exports = __webpack_exports__;
 // }
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const sdk_1 = __nccwpck_require__(851);
-const _generated_documents_1 = __nccwpck_require__(647);
-const { LINEAR_API_KEY, LINEAR_TEAM_ID = '', LINEAR_TEMPLATE_ID, LINEAR_ISSUE_TITLE, LINEAR_ISSUE_BODY = '', LINEAR_WORKSPACE, LINEAR_ATTACHMENT_URL, } = process.env;
-const ISSUE_NUMBER_REGEX = /([A-Z]{2,10}-[0-9]{4,6})/g;
+const createReleaseIssue_1 = __nccwpck_require__(858);
+const config_1 = __nccwpck_require__(373);
 (async () => {
     try {
         const linearClient = new sdk_1.LinearClient({
-            apiKey: LINEAR_API_KEY,
+            apiKey: config_1.LINEAR_API_KEY,
         });
-        await createReleaseIssue(linearClient);
+        await (0, createReleaseIssue_1.createReleaseIssue)(linearClient);
     }
     catch (e) {
         console.error('Unable to create linear client');
     }
 })();
-async function createReleaseIssue(linearClient) {
-    try {
-        const response = await linearClient.createIssue({
-            teamId: LINEAR_TEAM_ID,
-            title: LINEAR_ISSUE_TITLE,
-            templateId: LINEAR_TEMPLATE_ID,
-        });
-        const releaseIssue = await response.issue;
-        if (!releaseIssue) {
-            throw new Error('Issue not found');
-        }
-        console.log('Created release issue:', releaseIssue.identifier, releaseIssue.title);
-        console.log(releaseIssue.url);
-        if (LINEAR_ISSUE_BODY) {
-            await linearClient.updateIssue(releaseIssue.id, {
-                description: releaseIssue.description +
-                    '\n\n' +
-                    LINEAR_ISSUE_BODY.replace(ISSUE_NUMBER_REGEX, `[$1](https://linear.app/${LINEAR_WORKSPACE}/issue/$1/)`),
-            });
-        }
-        if (LINEAR_ATTACHMENT_URL) {
-            await linearClient.attachmentLinkURL(releaseIssue.id, LINEAR_ATTACHMENT_URL, {
-                title: LINEAR_ISSUE_TITLE,
-            });
-        }
-        await linkIssues(linearClient, releaseIssue);
-    }
-    catch (e) {
-        console.error(`Unable to create release issue, ${e}`);
-    }
-}
-async function linkIssues(linearClient, releaseIssue) {
-    for (const issueId of LINEAR_ISSUE_BODY.match(ISSUE_NUMBER_REGEX) ?? []) {
-        try {
-            const issue = await findIssueByIdentifier(linearClient, issueId);
-            if (issue) {
-                await linearClient.createComment({
-                    body: `[${LINEAR_ISSUE_TITLE}](https://linear.app/${LINEAR_WORKSPACE}/issue/${releaseIssue.identifier}/)`,
-                    issueId: issue.id,
-                });
-                console.log('Added comment:', issueId);
-                await linearClient.createIssueRelation({
-                    issueId: issue.id,
-                    relatedIssueId: releaseIssue.id,
-                    type: _generated_documents_1.IssueRelationType.Related,
-                });
-                console.log('Added related issue:', issueId);
-            }
-        }
-        catch (e) {
-            console.error(`Unable to link linear issue to release, ${e}`);
-        }
-    }
-}
-async function findIssueByIdentifier(linearClient, issueIdentifier) {
-    try {
-        const response = await linearClient.client.rawRequest(`
-          query($id: String!) {
-              issue(id: $id) {
-                  id
-              }
-          }
-      `, { id: issueIdentifier });
-        // @ts-ignore
-        return response.data.issue;
-    }
-    catch (error) {
-        console.error('Error finding issue:', error);
-        return null;
-    }
-}
 
 })();
 
