@@ -2,13 +2,31 @@ name: 'action-linear-release-issue'
 description: 'Create Linear issue for GitHub release'
 author: 'Aleksei Tabakman'
 inputs:
-  who-to-greet: # id of input
-    description: 'Who to greet'
+  linear-api-key:
+    description: 'Linear API key'
     required: true
-    default: 'World'
+  linear-team-id:
+    description: 'Linear team ID'
+    required: true
+  linear-issue-title:
+    description: 'Linear issue title'
+    required: true
+  linear-workspace:
+    description: 'Linear workspace'
+    required: true
+  linear-template-id:
+    description: 'Linear template ID'
+  linear-issue-body:
+    description: 'Linear issue body'
+  linear-attachment-url:
+    description: 'Linear attachment URL'
 outputs:
-  time: # id of output
-    description: 'The time we greeted you'
+  linear-release-issue-url:
+    description: 'The URL of created Linear issue'
+  linear-release-issue-identifier:
+    description: 'The identifier of created Linear issue'
+  linear-release-issue-title:
+    description: 'The title of created Linear issue'
 runs:
   using: 'node20'
   main: 'dist/index.js'

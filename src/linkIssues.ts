@@ -17,13 +17,13 @@ export async function linkIssues(linearClient: LinearClient, releaseIssue: Issue
         await linearClient.createIssueRelation({
           issueId: issue.id,
           relatedIssueId: releaseIssue.id,
-          // @ts-ignore
+          // @ts-ignore can not export enum from @linear/sdk
           type: 'related',
         });
         console.log('Added related issue:', issueId);
       }
-    } catch (e) {
-      console.error(`Unable to link linear issue to release, ${e}`);
+    } catch (error) {
+      console.error('Unable to link linear issue to release', error);
     }
   }
 }

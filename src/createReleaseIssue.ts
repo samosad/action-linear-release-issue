@@ -43,7 +43,9 @@ export async function createReleaseIssue(linearClient: LinearClient) {
     }
 
     await linkIssues(linearClient, releaseIssue);
-  } catch (e) {
-    console.error(`Unable to create release issue, ${e}`);
+
+    return releaseIssue;
+  } catch (error) {
+    console.error('Unable to create release issue', error);
   }
 }

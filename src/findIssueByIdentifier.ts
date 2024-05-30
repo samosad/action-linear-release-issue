@@ -16,7 +16,7 @@ export async function findIssueByIdentifier(linearClient: LinearClient, issueIde
     // @ts-ignore
     return response.data.issue;
   } catch (error) {
-    console.error('Error finding issue:', error);
+    console.error('Error finding issue', error);
     return null;
   }
 }
