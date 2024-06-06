@@ -17,10 +17,10 @@ Creates Linear issues for GitHub releases.
 
 In your GitHub project, create a new workflow file, for example: `.github/workflows/linear_release.yml`
 
-> **Note**
+> [!IMPORTANT]
 > - You **must** use [GitHub Actions secrets](https://docs.github.com/en/actions/security-guides/using-secrets-in-github-actions) to store `LINEAR_API_KEY`.
-> - You can use [GitHub Actions variables](https://docs.github.com/en/actions/learn-github-actions/variables) to store `LINEAR_TEAM_ID`, `LINEAR_WORKSPACE`, `LINEAR_TEMPLATE_ID`, or just hardcode values in the workflow file.
-> - 
+> - You can use [GitHub Actions variables](https://docs.github.com/en/actions/learn-github-actions/variables) to store `LINEAR_TEAM_ID`, `LINEAR_WORKSPACE`, `LINEAR_TEMPLATE_ID`. Or just hardcode values in the workflow file.
+
 ```yaml
 name: Create Release issue in Linear
 
