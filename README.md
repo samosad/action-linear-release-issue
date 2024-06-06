@@ -34,6 +34,7 @@ jobs:
 
     steps:
       - name: Create issue
+        id: create_issue
         uses: samosad/action-linear-release-issue@v1
         with:
           linear-api-key: ${{ secrets.LINEAR_API_KEY }}
@@ -44,3 +45,13 @@ jobs:
           linear-issue-body: ${{ github.event.release.body }}
           linear-attachment-url: ${{ github.event.release.html_url }}
 ```
+
+## Outputs
+
+You can use outputs created by this action in other actions. For example, to send a Slack notification about the created Linear issue, you can use the following command:
+
+```shell
+curl -X POST -d '{"text": "Release task created: ${{ steps.create_issue.outputs.linear-release-issue-url }}"}' ${{ env.SLACK_WEBHOOK_URL }}
+```
+
+Available outputs are defined in `action.yml` file.
