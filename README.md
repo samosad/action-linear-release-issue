@@ -39,9 +39,9 @@ jobs:
         with:
           linear-api-key: ${{ secrets.LINEAR_API_KEY }}
           linear-team-id: ${{ env.LINEAR_TEAM_ID }}
-          linear-issue-title: "Release ${{ github.event.release.tag_name }}"
           linear-workspace: ${{ env.LINEAR_WORKSPACE }}
           linear-template-id: ${{ env.LINEAR_TEMPLATE_ID }}
+          linear-issue-title: "Release ${{ github.event.release.tag_name }}"
           linear-issue-body: ${{ github.event.release.body }}
           linear-attachment-url: ${{ github.event.release.html_url }}
 ```
