@@ -18,7 +18,7 @@ import { LINEAR_API_KEY } from 'src/config';
       setOutput('linear-release-issue-title', releaseIssue.title);
     }
   } catch (error) {
-    console.error('Unable to create linear client', error);
+    console.error('\n🚢 Unable to create linear client', error);
     setFailed(error instanceof Error ? error : 'Unable to create linear client');
   }
 })();

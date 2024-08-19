@@ -1,29 +1,27 @@
-import { Issue, LinearClient } from '@linear/sdk';
+import { Issue, LinearClient, LinearDocument } from '@linear/sdk';
 import { findIssueByIdentifier } from 'src/findIssueByIdentifier';
 import { LINEAR_ISSUE_REGEX, LINEAR_ISSUE_BODY, LINEAR_ISSUE_TITLE, LINEAR_WORKSPACE } from 'src/config';
+import { IssueRelationType } from '@linear/sdk/dist/_generated_documents';
 
 export async function linkIssues(linearClient: LinearClient, releaseIssue: Issue) {
   for (const issueId of LINEAR_ISSUE_BODY.match(LINEAR_ISSUE_REGEX) ?? []) {
-    try {
-      const issue = await findIssueByIdentifier(linearClient, issueId);
+    const issue = await findIssueByIdentifier(linearClient, issueId);
 
-      if (issue) {
-        await linearClient.createComment({
-          body: `[${LINEAR_ISSUE_TITLE}](https://linear.app/${LINEAR_WORKSPACE}/issue/${releaseIssue.identifier}/)`,
-          issueId: issue.id,
-        });
-        console.log('Added comment:', issueId);
+    if (issue) {
+      await linearClient.createComment({
+        body: `[${LINEAR_ISSUE_TITLE}](https://linear.app/${LINEAR_WORKSPACE}/issue/${releaseIssue.identifier}/)`,
+        issueId: issue.id,
+      });
 
-        await linearClient.createIssueRelation({
-          issueId: issue.id,
-          relatedIssueId: releaseIssue.id,
-          // @ts-ignore can not export enum from @linear/sdk
-          type: 'related',
-        });
-        console.log('Added related issue:', issueId);
-      }
-    } catch (error) {
-      console.error('Unable to link linear issue to release', error);
+      console.log('\n🚢 Added comment:', issueId);
+
+      await linearClient.createIssueRelation({
+        issueId: issue.id,
+        relatedIssueId: releaseIssue.id,
+        type: LinearDocument.IssueRelationType.Related,
+      });
+
+      console.log('\n🚢 Added related issue:', issueId);
     }
   }
 }

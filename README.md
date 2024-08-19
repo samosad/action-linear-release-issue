@@ -1,4 +1,4 @@
-# action-linear-release-issue
+# 🚢 action-linear-release-issue
 
 Creates Linear issues for GitHub releases.
 
@@ -38,10 +38,10 @@ jobs:
         uses: samosad/action-linear-release-issue@v1
         with:
           linear-api-key: ${{ secrets.LINEAR_API_KEY }}
-          linear-team-id: ${{ env.LINEAR_TEAM_ID }}
+          linear-team-id: ${{ vars.LINEAR_TEAM_ID }}
           linear-issue-title: "Release ${{ github.event.release.tag_name }}"
-          linear-workspace: ${{ env.LINEAR_WORKSPACE }}
-          linear-template-id: ${{ env.LINEAR_TEMPLATE_ID }}
+          linear-workspace: ${{ vars.LINEAR_WORKSPACE }}
+          linear-template-id: ${{ vars.LINEAR_TEMPLATE_ID }}
           linear-issue-body: ${{ github.event.release.body }}
           linear-attachment-url: ${{ github.event.release.html_url }}
 ```
@@ -51,7 +51,7 @@ jobs:
 You can use outputs created by this action in other actions. For example, to send a Slack notification about the created Linear issue, you can use the following command:
 
 ```shell
-curl -X POST -d '{"text": "Release task created: ${{ steps.create_issue.outputs.linear-release-issue-url }}"}' ${{ env.SLACK_WEBHOOK_URL }}
+curl -X POST -d '{"text": "Release task created: ${{ steps.create_issue.outputs.linear-release-issue-url }}"}' ${{ vars.SLACK_WEBHOOK_URL }}
 ```
 
 Available outputs are defined in `action.yml` file.
