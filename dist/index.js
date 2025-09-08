@@ -24932,9 +24932,9 @@ exports["default"] = _default;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.LINEAR_ISSUE_REGEX = exports.LINEAR_ATTACHMENT_URL = exports.LINEAR_WORKSPACE = exports.LINEAR_ISSUE_BODY = exports.LINEAR_ISSUE_TITLE = exports.LINEAR_TEMPLATE_ID = exports.LINEAR_TEAM_ID = exports.LINEAR_API_KEY = void 0;
+exports.LINEAR_LABEL_RELEASE_TAG = exports.LINEAR_ISSUE_REGEX = exports.LINEAR_ATTACHMENT_URL = exports.LINEAR_WORKSPACE = exports.LINEAR_ISSUE_BODY = exports.LINEAR_ISSUE_TITLE = exports.LINEAR_TEMPLATE_ID = exports.LINEAR_TEAM_ID = exports.LINEAR_API_KEY = void 0;
 const core_1 = __nccwpck_require__(2186);
-const { LINEAR_API_KEY = (0, core_1.getInput)('linear-api-key'), LINEAR_TEAM_ID = (0, core_1.getInput)('linear-team-id'), LINEAR_TEMPLATE_ID = (0, core_1.getInput)('linear-template-id'), LINEAR_ISSUE_TITLE = (0, core_1.getInput)('linear-issue-title'), LINEAR_ISSUE_BODY = (0, core_1.getInput)('linear-issue-body'), LINEAR_WORKSPACE = (0, core_1.getInput)('linear-workspace'), LINEAR_ATTACHMENT_URL = (0, core_1.getInput)('linear-attachment-url'), } = process.env;
+const { LINEAR_API_KEY = (0, core_1.getInput)('linear-api-key'), LINEAR_TEAM_ID = (0, core_1.getInput)('linear-team-id'), LINEAR_TEMPLATE_ID = (0, core_1.getInput)('linear-template-id'), LINEAR_ISSUE_TITLE = (0, core_1.getInput)('linear-issue-title'), LINEAR_ISSUE_BODY = (0, core_1.getInput)('linear-issue-body'), LINEAR_WORKSPACE = (0, core_1.getInput)('linear-workspace'), LINEAR_ATTACHMENT_URL = (0, core_1.getInput)('linear-attachment-url'), LINEAR_LABEL_RELEASE_TAG = (0, core_1.getInput)('linear-label-release-tag'), } = process.env;
 exports.LINEAR_API_KEY = LINEAR_API_KEY;
 exports.LINEAR_TEAM_ID = LINEAR_TEAM_ID;
 exports.LINEAR_TEMPLATE_ID = LINEAR_TEMPLATE_ID;
@@ -24942,6 +24942,7 @@ exports.LINEAR_ISSUE_TITLE = LINEAR_ISSUE_TITLE;
 exports.LINEAR_ISSUE_BODY = LINEAR_ISSUE_BODY;
 exports.LINEAR_WORKSPACE = LINEAR_WORKSPACE;
 exports.LINEAR_ATTACHMENT_URL = LINEAR_ATTACHMENT_URL;
+exports.LINEAR_LABEL_RELEASE_TAG = LINEAR_LABEL_RELEASE_TAG;
 const LINEAR_ISSUE_REGEX = /([A-Z]{2,10}-[0-9]{4,6})/g;
 exports.LINEAR_ISSUE_REGEX = LINEAR_ISSUE_REGEX;
 
@@ -24956,38 +24957,56 @@ exports.LINEAR_ISSUE_REGEX = LINEAR_ISSUE_REGEX;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.createReleaseIssue = void 0;
 const linkIssues_1 = __nccwpck_require__(2546);
+const labelManager_1 = __nccwpck_require__(6256);
 const config_1 = __nccwpck_require__(6373);
 async function createReleaseIssue(linearClient) {
-    try {
-        const response = await linearClient.createIssue({
-            teamId: config_1.LINEAR_TEAM_ID,
-            title: config_1.LINEAR_ISSUE_TITLE,
-            templateId: config_1.LINEAR_TEMPLATE_ID,
+    const response = await linearClient.createIssue({
+        teamId: config_1.LINEAR_TEAM_ID,
+        title: config_1.LINEAR_ISSUE_TITLE,
+        templateId: config_1.LINEAR_TEMPLATE_ID,
+    });
+    const releaseIssue = await response.issue;
+    if (!releaseIssue) {
+        throw new Error('Issue not found');
+    }
+    console.log('\n🚢 Created release issue:');
+    console.log(releaseIssue.identifier);
+    console.log(releaseIssue.title);
+    console.log(releaseIssue.url);
+    if (config_1.LINEAR_ISSUE_BODY) {
+        await linearClient.updateIssue(releaseIssue.id, {
+            description: releaseIssue.description +
+                '\n\n' +
+                config_1.LINEAR_ISSUE_BODY.replace(config_1.LINEAR_ISSUE_REGEX, `[$1](https://linear.app/${config_1.LINEAR_WORKSPACE}/issue/$1/)`),
         });
-        const releaseIssue = await response.issue;
-        if (!releaseIssue) {
-            throw new Error('Issue not found');
-        }
-        console.log('Created release issue:', releaseIssue.identifier, releaseIssue.title);
-        console.log(releaseIssue.url);
-        if (config_1.LINEAR_ISSUE_BODY) {
+    }
+    if (config_1.LINEAR_ATTACHMENT_URL) {
+        await linearClient.attachmentLinkURL(releaseIssue.id, config_1.LINEAR_ATTACHMENT_URL, {
+            title: config_1.LINEAR_ISSUE_TITLE,
+        });
+    }
+    await (0, linkIssues_1.linkIssues)(linearClient, releaseIssue);
+    // Add release tag label if provided
+    if (config_1.LINEAR_LABEL_RELEASE_TAG) {
+        try {
+            console.log(`🏷️  Processing release tag: ${config_1.LINEAR_LABEL_RELEASE_TAG}`);
+            const labelId = await (0, labelManager_1.getOrCreateReleaseTagLabel)(linearClient, config_1.LINEAR_TEAM_ID, config_1.LINEAR_LABEL_RELEASE_TAG);
+            // Refetch the issue to get current labels (in case template added some)
+            const refreshedIssue = await linearClient.issue(releaseIssue.id);
+            const labelConnection = await refreshedIssue?.labels();
+            const currentLabels = labelConnection?.nodes?.map((label) => label.id) || [];
+            // Update the issue with the release tag label (append to existing labels)
             await linearClient.updateIssue(releaseIssue.id, {
-                description: releaseIssue.description +
-                    '\n\n' +
-                    config_1.LINEAR_ISSUE_BODY.replace(config_1.LINEAR_ISSUE_REGEX, `[$1](https://linear.app/${config_1.LINEAR_WORKSPACE}/issue/$1/)`),
+                labelIds: [...currentLabels, labelId],
             });
+            console.log(`✅ Added release tag label "${config_1.LINEAR_LABEL_RELEASE_TAG}" to issue ${releaseIssue.identifier}`);
         }
-        if (config_1.LINEAR_ATTACHMENT_URL) {
-            await linearClient.attachmentLinkURL(releaseIssue.id, config_1.LINEAR_ATTACHMENT_URL, {
-                title: config_1.LINEAR_ISSUE_TITLE,
-            });
+        catch (error) {
+            console.error(`❌ Failed to add release tag label: ${error}`);
+            // Don't throw the error to avoid breaking the main flow
         }
-        await (0, linkIssues_1.linkIssues)(linearClient, releaseIssue);
-        return releaseIssue;
     }
-    catch (error) {
-        console.error('Unable to create release issue', error);
-    }
+    return releaseIssue;
 }
 exports.createReleaseIssue = createReleaseIssue;
 
@@ -25002,23 +25021,153 @@ exports.createReleaseIssue = createReleaseIssue;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.findIssueByIdentifier = void 0;
 async function findIssueByIdentifier(linearClient, issueIdentifier) {
-    try {
-        const response = await linearClient.client.rawRequest(`
+    const response = await linearClient.client.rawRequest(`
           query($id: String!) {
               issue(id: $id) {
                   id
               }
           }
       `, { id: issueIdentifier });
-        // @ts-ignore
-        return response.data.issue;
-    }
-    catch (error) {
-        console.error('Error finding issue', error);
-        return null;
-    }
+    // @ts-ignore
+    return response.data.issue;
 }
 exports.findIssueByIdentifier = findIssueByIdentifier;
+
+
+/***/ }),
+
+/***/ 6256:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.getOrCreateReleaseTagLabel = exports.findLabelInGroup = exports.createLabelInGroup = exports.createLabel = exports.createLabelGroup = exports.findLabelGroupByName = exports.findLabelByName = void 0;
+/**
+ * Find a label by name for a specific team
+ */
+async function findLabelByName(linearClient, teamId, labelName) {
+    const labels = await linearClient.issueLabels({
+        filter: { team: { id: { eq: teamId } } }
+    });
+    const label = labels.nodes.find((label) => label.name === labelName);
+    return label || null;
+}
+exports.findLabelByName = findLabelByName;
+/**
+ * Find a label group by name for a specific team
+ */
+async function findLabelGroupByName(linearClient, teamId, groupName) {
+    const labels = await linearClient.issueLabels({
+        filter: { team: { id: { eq: teamId } } }
+    });
+    const labelGroup = labels.nodes.find((label) => label.isGroup && label.name === groupName);
+    return labelGroup ? {
+        id: labelGroup.id,
+        name: labelGroup.name,
+        color: labelGroup.color,
+    } : null;
+}
+exports.findLabelGroupByName = findLabelGroupByName;
+/**
+ * Create a new label group for a team
+ */
+async function createLabelGroup(linearClient, teamId, groupName, color = '#8b5cf6') {
+    const response = await linearClient.createIssueLabel({
+        teamId,
+        name: groupName,
+        color,
+        // @ts-ignore - isGroup property might not be properly typed in SDK
+        isGroup: true,
+    });
+    const labelGroup = await response.issueLabel;
+    if (!labelGroup) {
+        throw new Error(`Failed to create label group: ${groupName}`);
+    }
+    return {
+        id: labelGroup.id,
+        name: labelGroup.name,
+        color: labelGroup.color,
+    };
+}
+exports.createLabelGroup = createLabelGroup;
+/**
+ * Create a new label for a team
+ */
+async function createLabel(linearClient, teamId, labelName, color = '#10b981') {
+    const response = await linearClient.createIssueLabel({
+        teamId,
+        name: labelName,
+        color,
+    });
+    const label = await response.issueLabel;
+    if (!label) {
+        throw new Error(`Failed to create label: ${labelName}`);
+    }
+    return label;
+}
+exports.createLabel = createLabel;
+/**
+ * Create a new label within a label group
+ */
+async function createLabelInGroup(linearClient, teamId, parentId, labelName, color = '#10b981') {
+    const response = await linearClient.createIssueLabel({
+        teamId,
+        name: labelName,
+        color,
+        parentId,
+    });
+    const label = await response.issueLabel;
+    if (!label) {
+        throw new Error(`Failed to create label: ${labelName}`);
+    }
+    return label;
+}
+exports.createLabelInGroup = createLabelInGroup;
+/**
+ * Find a label within a specific label group
+ */
+async function findLabelInGroup(linearClient, teamId, parentId, labelName) {
+    const labels = await linearClient.issueLabels({
+        filter: { team: { id: { eq: teamId } } }
+    });
+    const label = labels.nodes.find((label) => label.name === labelName && label.parent?.id === parentId);
+    return label || null;
+}
+exports.findLabelInGroup = findLabelInGroup;
+/**
+ * Get or create a release tag label within a "tag" label group
+ * This function ensures that:
+ * 1. The "tag" label group exists
+ * 2. The specific release tag label exists within the "tag" group
+ * 3. Returns the label ID for assignment to issues
+ */
+async function getOrCreateReleaseTagLabel(linearClient, teamId, releaseTag) {
+    // Step 1: Check if "tag" label group exists
+    let tagGroup = await findLabelGroupByName(linearClient, teamId, 'tag');
+    // Step 2: Create "tag" group if it doesn't exist
+    if (!tagGroup) {
+        console.log('🏷️  Creating "tag" label group...');
+        tagGroup = await createLabelGroup(linearClient, teamId, 'tag');
+        console.log('✅ Created "tag" label group');
+    }
+    else {
+        console.log('✅ Found existing "tag" label group');
+    }
+    // Step 3: Check if the specific release tag exists in the group
+    let releaseTagLabel = await findLabelInGroup(linearClient, teamId, tagGroup.id, releaseTag);
+    // Step 4: Create the release tag label if it doesn't exist
+    if (!releaseTagLabel) {
+        console.log(`🏷️  Creating release tag label: ${releaseTag} in "tag" group`);
+        releaseTagLabel = await createLabelInGroup(linearClient, teamId, tagGroup.id, releaseTag);
+        console.log(`✅ Created release tag label: ${releaseTag}`);
+    }
+    else {
+        console.log(`✅ Found existing release tag label: ${releaseTag}`);
+    }
+    return releaseTagLabel.id;
+}
+exports.getOrCreateReleaseTagLabel = getOrCreateReleaseTagLabel;
 
 
 /***/ }),
@@ -25030,29 +25179,24 @@ exports.findIssueByIdentifier = findIssueByIdentifier;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.linkIssues = void 0;
+const sdk_1 = __nccwpck_require__(8851);
 const findIssueByIdentifier_1 = __nccwpck_require__(5857);
 const config_1 = __nccwpck_require__(6373);
 async function linkIssues(linearClient, releaseIssue) {
     for (const issueId of config_1.LINEAR_ISSUE_BODY.match(config_1.LINEAR_ISSUE_REGEX) ?? []) {
-        try {
-            const issue = await (0, findIssueByIdentifier_1.findIssueByIdentifier)(linearClient, issueId);
-            if (issue) {
-                await linearClient.createComment({
-                    body: `[${config_1.LINEAR_ISSUE_TITLE}](https://linear.app/${config_1.LINEAR_WORKSPACE}/issue/${releaseIssue.identifier}/)`,
-                    issueId: issue.id,
-                });
-                console.log('Added comment:', issueId);
-                await linearClient.createIssueRelation({
-                    issueId: issue.id,
-                    relatedIssueId: releaseIssue.id,
-                    // @ts-ignore can not export enum from @linear/sdk
-                    type: 'related',
-                });
-                console.log('Added related issue:', issueId);
-            }
-        }
-        catch (error) {
-            console.error('Unable to link linear issue to release', error);
+        const issue = await (0, findIssueByIdentifier_1.findIssueByIdentifier)(linearClient, issueId);
+        if (issue) {
+            await linearClient.createComment({
+                body: `[${config_1.LINEAR_ISSUE_TITLE}](https://linear.app/${config_1.LINEAR_WORKSPACE}/issue/${releaseIssue.identifier}/)`,
+                issueId: issue.id,
+            });
+            console.log('\n🚢 Added comment:', issueId);
+            await linearClient.createIssueRelation({
+                issueId: issue.id,
+                relatedIssueId: releaseIssue.id,
+                type: sdk_1.LinearDocument.IssueRelationType.Related,
+            });
+            console.log('\n🚢 Added related issue:', issueId);
         }
     }
 }
@@ -26980,7 +27124,7 @@ const config_1 = __nccwpck_require__(6373);
         }
     }
     catch (error) {
-        console.error('Unable to create linear client', error);
+        console.error('\n🚢 Unable to create linear client', error);
         (0, core_1.setFailed)(error instanceof Error ? error : 'Unable to create linear client');
     }
 })();
