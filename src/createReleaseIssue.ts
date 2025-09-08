@@ -1,5 +1,6 @@
 import { LinearClient } from '@linear/sdk';
 import { linkIssues } from 'src/linkIssues';
+import { getOrCreateReleaseTagLabel } from 'src/labelManager';
 import {
   LINEAR_ISSUE_REGEX,
   LINEAR_ATTACHMENT_URL,
@@ -8,6 +9,7 @@ import {
   LINEAR_TEAM_ID,
   LINEAR_TEMPLATE_ID,
   LINEAR_WORKSPACE,
+  LINEAR_LABEL_RELEASE_TAG,
 } from './config';
 
 export async function createReleaseIssue(linearClient: LinearClient) {
@@ -44,6 +46,33 @@ export async function createReleaseIssue(linearClient: LinearClient) {
   }
 
   await linkIssues(linearClient, releaseIssue);
+
+  // Add release tag label if provided
+  if (LINEAR_LABEL_RELEASE_TAG) {
+    try {
+      console.log(`🏷️  Processing release tag: ${LINEAR_LABEL_RELEASE_TAG}`);
+      const labelId = await getOrCreateReleaseTagLabel(
+        linearClient,
+        LINEAR_TEAM_ID,
+        LINEAR_LABEL_RELEASE_TAG
+      );
+      
+      // Refetch the issue to get current labels (in case template added some)
+      const refreshedIssue = await linearClient.issue(releaseIssue.id);
+      const labelConnection = await refreshedIssue?.labels();
+      const currentLabels = labelConnection?.nodes?.map((label: any) => label.id) || [];
+      
+      // Update the issue with the release tag label (append to existing labels)
+      await linearClient.updateIssue(releaseIssue.id, {
+        labelIds: [...currentLabels, labelId],
+      });
+      
+      console.log(`✅ Added release tag label "${LINEAR_LABEL_RELEASE_TAG}" to issue ${releaseIssue.identifier}`);
+    } catch (error) {
+      console.error(`❌ Failed to add release tag label: ${error}`);
+      // Don't throw the error to avoid breaking the main flow
+    }
+  }
 
   return releaseIssue;
 }
