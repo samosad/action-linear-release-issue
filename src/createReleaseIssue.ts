@@ -9,6 +9,7 @@ import {
   LINEAR_TEAM_ID,
   LINEAR_TEMPLATE_ID,
   LINEAR_WORKSPACE,
+  LINEAR_LABEL_RELEASE_GROUP,
   LINEAR_LABEL_RELEASE_TAG,
 } from './config';
 
@@ -54,7 +55,8 @@ export async function createReleaseIssue(linearClient: LinearClient) {
       const labelId = await getOrCreateReleaseTagLabel(
         linearClient,
         LINEAR_TEAM_ID,
-        LINEAR_LABEL_RELEASE_TAG
+        LINEAR_LABEL_RELEASE_TAG,
+        LINEAR_LABEL_RELEASE_GROUP
       );
       
       // Refetch the issue to get current labels (in case template added some)

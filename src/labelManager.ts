@@ -155,18 +155,19 @@ export async function findLabelInGroup(
 export async function getOrCreateReleaseTagLabel(
   linearClient: LinearClient,
   teamId: string,
-  releaseTag: string
+  releaseTag: string,
+  releaseGroup: string
 ): Promise<string> {
-  // Step 1: Check if "tag" label group exists
-  let tagGroup = await findLabelGroupByName(linearClient, teamId, 'tag');
+  // Step 1: Check if "releaseGroup" label group exists
+  let tagGroup = await findLabelGroupByName(linearClient, teamId, releaseGroup);
   
-  // Step 2: Create "tag" group if it doesn't exist
+  // Step 2: Create "releaseGroup" group if it doesn't exist
   if (!tagGroup) {
-    console.log('🏷️  Creating "tag" label group...');
-    tagGroup = await createLabelGroup(linearClient, teamId, 'tag');
-    console.log('✅ Created "tag" label group');
+    console.log(`🏷️  Creating ${releaseGroup} label group...`);
+    tagGroup = await createLabelGroup(linearClient, teamId, releaseGroup);
+    console.log(`✅ Created ${releaseGroup} label group`);
   } else {
-    console.log('✅ Found existing "tag" label group');
+    console.log(`✅ Found existing ${releaseGroup} label group`);
   }
 
   // Step 3: Check if the specific release tag exists in the group
@@ -174,7 +175,7 @@ export async function getOrCreateReleaseTagLabel(
   
   // Step 4: Create the release tag label if it doesn't exist
   if (!releaseTagLabel) {
-    console.log(`🏷️  Creating release tag label: ${releaseTag} in "tag" group`);
+    console.log(`🏷️  Creating release tag label: ${releaseTag} in ${releaseGroup} group`);
     releaseTagLabel = await createLabelInGroup(
       linearClient,
       teamId,
