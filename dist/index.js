@@ -24932,9 +24932,9 @@ exports["default"] = _default;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.LINEAR_LABEL_RELEASE_TAG = exports.LINEAR_ISSUE_REGEX = exports.LINEAR_ATTACHMENT_URL = exports.LINEAR_WORKSPACE = exports.LINEAR_ISSUE_BODY = exports.LINEAR_ISSUE_TITLE = exports.LINEAR_TEMPLATE_ID = exports.LINEAR_TEAM_ID = exports.LINEAR_API_KEY = void 0;
+exports.LINEAR_LABEL_RELEASE_TAG = exports.LINEAR_LABEL_RELEASE_GROUP = exports.LINEAR_ISSUE_REGEX = exports.LINEAR_ATTACHMENT_URL = exports.LINEAR_WORKSPACE = exports.LINEAR_ISSUE_BODY = exports.LINEAR_ISSUE_TITLE = exports.LINEAR_TEMPLATE_ID = exports.LINEAR_TEAM_ID = exports.LINEAR_API_KEY = void 0;
 const core_1 = __nccwpck_require__(2186);
-const { LINEAR_API_KEY = (0, core_1.getInput)('linear-api-key'), LINEAR_TEAM_ID = (0, core_1.getInput)('linear-team-id'), LINEAR_TEMPLATE_ID = (0, core_1.getInput)('linear-template-id'), LINEAR_ISSUE_TITLE = (0, core_1.getInput)('linear-issue-title'), LINEAR_ISSUE_BODY = (0, core_1.getInput)('linear-issue-body'), LINEAR_WORKSPACE = (0, core_1.getInput)('linear-workspace'), LINEAR_ATTACHMENT_URL = (0, core_1.getInput)('linear-attachment-url'), LINEAR_LABEL_RELEASE_TAG = (0, core_1.getInput)('linear-label-release-tag'), } = process.env;
+const { LINEAR_API_KEY = (0, core_1.getInput)('linear-api-key'), LINEAR_TEAM_ID = (0, core_1.getInput)('linear-team-id'), LINEAR_TEMPLATE_ID = (0, core_1.getInput)('linear-template-id'), LINEAR_ISSUE_TITLE = (0, core_1.getInput)('linear-issue-title'), LINEAR_ISSUE_BODY = (0, core_1.getInput)('linear-issue-body'), LINEAR_WORKSPACE = (0, core_1.getInput)('linear-workspace'), LINEAR_ATTACHMENT_URL = (0, core_1.getInput)('linear-attachment-url'), LINEAR_LABEL_RELEASE_GROUP = (0, core_1.getInput)('linear-label-release-group') || 'tag', LINEAR_LABEL_RELEASE_TAG = (0, core_1.getInput)('linear-label-release-tag'), } = process.env;
 exports.LINEAR_API_KEY = LINEAR_API_KEY;
 exports.LINEAR_TEAM_ID = LINEAR_TEAM_ID;
 exports.LINEAR_TEMPLATE_ID = LINEAR_TEMPLATE_ID;
@@ -24942,6 +24942,7 @@ exports.LINEAR_ISSUE_TITLE = LINEAR_ISSUE_TITLE;
 exports.LINEAR_ISSUE_BODY = LINEAR_ISSUE_BODY;
 exports.LINEAR_WORKSPACE = LINEAR_WORKSPACE;
 exports.LINEAR_ATTACHMENT_URL = LINEAR_ATTACHMENT_URL;
+exports.LINEAR_LABEL_RELEASE_GROUP = LINEAR_LABEL_RELEASE_GROUP;
 exports.LINEAR_LABEL_RELEASE_TAG = LINEAR_LABEL_RELEASE_TAG;
 const LINEAR_ISSUE_REGEX = /([A-Z]{2,10}-[0-9]{4,6})/g;
 exports.LINEAR_ISSUE_REGEX = LINEAR_ISSUE_REGEX;
@@ -24990,7 +24991,7 @@ async function createReleaseIssue(linearClient) {
     if (config_1.LINEAR_LABEL_RELEASE_TAG) {
         try {
             console.log(`🏷️  Processing release tag: ${config_1.LINEAR_LABEL_RELEASE_TAG}`);
-            const labelId = await (0, labelManager_1.getOrCreateReleaseTagLabel)(linearClient, config_1.LINEAR_TEAM_ID, config_1.LINEAR_LABEL_RELEASE_TAG);
+            const labelId = await (0, labelManager_1.getOrCreateReleaseTagLabel)(linearClient, config_1.LINEAR_TEAM_ID, config_1.LINEAR_LABEL_RELEASE_TAG, config_1.LINEAR_LABEL_RELEASE_GROUP);
             // Refetch the issue to get current labels (in case template added some)
             const refreshedIssue = await linearClient.issue(releaseIssue.id);
             const labelConnection = await refreshedIssue?.labels();
@@ -25142,23 +25143,23 @@ exports.findLabelInGroup = findLabelInGroup;
  * 2. The specific release tag label exists within the "tag" group
  * 3. Returns the label ID for assignment to issues
  */
-async function getOrCreateReleaseTagLabel(linearClient, teamId, releaseTag) {
-    // Step 1: Check if "tag" label group exists
-    let tagGroup = await findLabelGroupByName(linearClient, teamId, 'tag');
-    // Step 2: Create "tag" group if it doesn't exist
+async function getOrCreateReleaseTagLabel(linearClient, teamId, releaseTag, releaseGroup) {
+    // Step 1: Check if "releaseGroup" label group exists
+    let tagGroup = await findLabelGroupByName(linearClient, teamId, releaseGroup);
+    // Step 2: Create "releaseGroup" group if it doesn't exist
     if (!tagGroup) {
-        console.log('🏷️  Creating "tag" label group...');
-        tagGroup = await createLabelGroup(linearClient, teamId, 'tag');
-        console.log('✅ Created "tag" label group');
+        console.log(`🏷️  Creating ${releaseGroup} label group...`);
+        tagGroup = await createLabelGroup(linearClient, teamId, releaseGroup);
+        console.log(`✅ Created ${releaseGroup} label group`);
     }
     else {
-        console.log('✅ Found existing "tag" label group');
+        console.log(`✅ Found existing ${releaseGroup} label group`);
     }
     // Step 3: Check if the specific release tag exists in the group
     let releaseTagLabel = await findLabelInGroup(linearClient, teamId, tagGroup.id, releaseTag);
     // Step 4: Create the release tag label if it doesn't exist
     if (!releaseTagLabel) {
-        console.log(`🏷️  Creating release tag label: ${releaseTag} in "tag" group`);
+        console.log(`🏷️  Creating release tag label: ${releaseTag} in ${releaseGroup} group`);
         releaseTagLabel = await createLabelInGroup(linearClient, teamId, tagGroup.id, releaseTag);
         console.log(`✅ Created release tag label: ${releaseTag}`);
     }
