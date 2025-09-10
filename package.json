@@ -1,6 +1,6 @@
 {
   "name": "action-linear-release-issue",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Create Linear issue for GitHub release",
   "author": "Aleksei Tabakman",
   "homepage": "https://github.com/samosad/action-linear-release-issue",
