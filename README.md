@@ -7,6 +7,7 @@ Creates Linear issues for GitHub releases.
 - It will try to find related Linear issues in the release body and link them to the created Linear issue.
 - It will attach a GitHub release link to the created Linear issue.
 - For the best results, use [Linear issue templates](https://linear.app/docs/issue-templates). You can set the issue assignee, status, labels, etc., via the template.
+- Optionally, it can add a specified label to a Linear issue as a part of a label group. By default, label group name is "tag".
 
 ## Prerequisites
 
@@ -44,6 +45,8 @@ jobs:
           linear-issue-title: "Release ${{ github.event.release.tag_name }}"
           linear-issue-body: ${{ github.event.release.body }}
           linear-attachment-url: ${{ github.event.release.html_url }}
+          linear-label-release-tag: ${{ github.event.release.tag_name }}
+          linear-label-release-group: ${{ vars.LINEAR_RELEASE_GROUP }}
 ```
 
 ## Outputs
