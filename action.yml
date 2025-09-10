@@ -18,6 +18,10 @@ inputs:
     description: 'Linear template ID'
   linear-issue-body:
     description: 'Linear issue body'
+  linear-label-release-group:
+    description: 'Linear release group'
+  linear-label-release-tag:
+    description: 'Release tag'
   linear-attachment-url:
     description: 'Linear attachment URL'
 outputs:
