@@ -46,8 +46,6 @@ export async function createReleaseIssue(linearClient: LinearClient) {
     });
   }
 
-  await linkIssues(linearClient, releaseIssue);
-
   // Add release tag label if provided
   if (LINEAR_LABEL_RELEASE_TAG) {
     try {
@@ -75,6 +73,8 @@ export async function createReleaseIssue(linearClient: LinearClient) {
       // Don't throw the error to avoid breaking the main flow
     }
   }
+
+  await linkIssues(linearClient, releaseIssue);
 
   return releaseIssue;
 }
