@@ -24986,7 +24986,6 @@ async function createReleaseIssue(linearClient) {
             title: config_1.LINEAR_ISSUE_TITLE,
         });
     }
-    await (0, linkIssues_1.linkIssues)(linearClient, releaseIssue);
     // Add release tag label if provided
     if (config_1.LINEAR_LABEL_RELEASE_TAG) {
         try {
@@ -25007,6 +25006,7 @@ async function createReleaseIssue(linearClient) {
             // Don't throw the error to avoid breaking the main flow
         }
     }
+    await (0, linkIssues_1.linkIssues)(linearClient, releaseIssue);
     return releaseIssue;
 }
 exports.createReleaseIssue = createReleaseIssue;
