@@ -38,6 +38,6 @@
     "@types/node": "^20.12.12",
     "@vercel/ncc": "^0.38.1",
     "prettier": "^3.2.5",
-    "release-it": "^17.3.0"
+    "release-it": "^19.2.4"
   }
 }
