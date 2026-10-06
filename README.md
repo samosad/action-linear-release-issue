@@ -37,7 +37,7 @@ jobs:
     steps:
       - name: Create issue
         id: create_issue
-        uses: samosad/action-linear-release-issue@v1
+        uses: samosad/action-linear-release-issue@v2
         with:
           linear-api-key: ${{ secrets.LINEAR_API_KEY }}
           linear-team-id: ${{ vars.LINEAR_TEAM_ID }}
