@@ -1,7 +1,6 @@
 import { Issue, LinearClient, LinearDocument } from '@linear/sdk';
-import { findIssueByIdentifier } from 'src/findIssueByIdentifier';
-import { LINEAR_ISSUE_REGEX, LINEAR_ISSUE_BODY, LINEAR_ISSUE_TITLE, LINEAR_WORKSPACE } from 'src/config';
-import { IssueRelationType } from '@linear/sdk/dist/_generated_documents';
+import { findIssueByIdentifier } from './findIssueByIdentifier';
+import { LINEAR_ISSUE_REGEX, LINEAR_ISSUE_BODY, LINEAR_ISSUE_TITLE, LINEAR_WORKSPACE } from './config';
 
 export async function linkIssues(linearClient: LinearClient, releaseIssue: Issue) {
   for (const issueId of LINEAR_ISSUE_BODY.match(LINEAR_ISSUE_REGEX) ?? []) {
