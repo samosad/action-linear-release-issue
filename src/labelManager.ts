@@ -12,16 +12,14 @@ interface IssueLabelGroup {
 export async function findLabelByName(
   linearClient: LinearClient,
   teamId: string,
-  labelName: string
+  labelName: string,
 ): Promise<IssueLabel | null> {
   const labels = await linearClient.issueLabels({
-    filter: { team: { id: { eq: teamId } } }
+    filter: { team: { id: { eq: teamId } } },
   });
-  
-  const label = labels.nodes.find((label: any) => 
-    label.name === labelName
-  );
-  
+
+  const label = labels.nodes.find((label: any) => label.name === labelName);
+
   return label || null;
 }
 
@@ -31,21 +29,21 @@ export async function findLabelByName(
 export async function findLabelGroupByName(
   linearClient: LinearClient,
   teamId: string,
-  groupName: string
+  groupName: string,
 ): Promise<IssueLabelGroup | null> {
   const labels = await linearClient.issueLabels({
-    filter: { team: { id: { eq: teamId } } }
+    filter: { team: { id: { eq: teamId } } },
   });
-  
-  const labelGroup = labels.nodes.find((label: any) => 
-    label.isGroup && label.name === groupName
-  );
-  
-  return labelGroup ? {
-    id: labelGroup.id,
-    name: labelGroup.name,
-    color: labelGroup.color,
-  } : null;
+
+  const labelGroup = labels.nodes.find((label: any) => label.isGroup && label.name === groupName);
+
+  return labelGroup
+    ? {
+        id: labelGroup.id,
+        name: labelGroup.name,
+        color: labelGroup.color,
+      }
+    : null;
 }
 
 /**
@@ -55,7 +53,7 @@ export async function createLabelGroup(
   linearClient: LinearClient,
   teamId: string,
   groupName: string,
-  color: string = '#8b5cf6'
+  color: string = '#8b5cf6',
 ): Promise<IssueLabelGroup> {
   const response = await linearClient.createIssueLabel({
     teamId,
@@ -84,7 +82,7 @@ export async function createLabel(
   linearClient: LinearClient,
   teamId: string,
   labelName: string,
-  color: string = '#10b981'
+  color: string = '#10b981',
 ): Promise<IssueLabel> {
   const response = await linearClient.createIssueLabel({
     teamId,
@@ -108,7 +106,7 @@ export async function createLabelInGroup(
   teamId: string,
   parentId: string,
   labelName: string,
-  color: string = '#10b981'
+  color: string = '#10b981',
 ): Promise<IssueLabel> {
   const response = await linearClient.createIssueLabel({
     teamId,
@@ -132,16 +130,14 @@ export async function findLabelInGroup(
   linearClient: LinearClient,
   teamId: string,
   parentId: string,
-  labelName: string
+  labelName: string,
 ): Promise<IssueLabel | null> {
   const labels = await linearClient.issueLabels({
-    filter: { team: { id: { eq: teamId } } }
+    filter: { team: { id: { eq: teamId } } },
   });
-  
-  const label = labels.nodes.find((label: any) => 
-    label.name === labelName && label.parent?.id === parentId
-  );
-  
+
+  const label = labels.nodes.find((label: any) => label.name === labelName && label.parent?.id === parentId);
+
   return label || null;
 }
 
@@ -156,11 +152,11 @@ export async function getOrCreateReleaseTagLabel(
   linearClient: LinearClient,
   teamId: string,
   releaseTag: string,
-  releaseGroup: string
+  releaseGroup: string,
 ): Promise<string> {
   // Step 1: Check if "releaseGroup" label group exists
   let tagGroup = await findLabelGroupByName(linearClient, teamId, releaseGroup);
-  
+
   // Step 2: Create "releaseGroup" group if it doesn't exist
   if (!tagGroup) {
     console.log(`🏷️  Creating ${releaseGroup} label group...`);
@@ -172,16 +168,11 @@ export async function getOrCreateReleaseTagLabel(
 
   // Step 3: Check if the specific release tag exists in the group
   let releaseTagLabel = await findLabelInGroup(linearClient, teamId, tagGroup.id, releaseTag);
-  
+
   // Step 4: Create the release tag label if it doesn't exist
   if (!releaseTagLabel) {
     console.log(`🏷️  Creating release tag label: ${releaseTag} in ${releaseGroup} group`);
-    releaseTagLabel = await createLabelInGroup(
-      linearClient,
-      teamId,
-      tagGroup.id,
-      releaseTag
-    );
+    releaseTagLabel = await createLabelInGroup(linearClient, teamId, tagGroup.id, releaseTag);
     console.log(`✅ Created release tag label: ${releaseTag}`);
   } else {
     console.log(`✅ Found existing release tag label: ${releaseTag}`);

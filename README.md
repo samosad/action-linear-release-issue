@@ -19,6 +19,7 @@ Creates Linear issues for GitHub releases.
 In your GitHub project, create a new workflow file, for example: `.github/workflows/linear_release.yml`
 
 > [!IMPORTANT]
+>
 > - You **must** use [GitHub Actions secrets](https://docs.github.com/en/actions/security-guides/using-secrets-in-github-actions) to store `LINEAR_API_KEY`.
 > - You can use [GitHub Actions variables](https://docs.github.com/en/actions/learn-github-actions/variables) to store `LINEAR_TEAM_ID`, `LINEAR_WORKSPACE`, `LINEAR_TEMPLATE_ID`. Or just hardcode values in the workflow file.
 
@@ -42,7 +43,7 @@ jobs:
           linear-team-id: ${{ vars.LINEAR_TEAM_ID }}
           linear-workspace: ${{ vars.LINEAR_WORKSPACE }}
           linear-template-id: ${{ vars.LINEAR_TEMPLATE_ID }}
-          linear-issue-title: "Release ${{ github.event.release.tag_name }}"
+          linear-issue-title: 'Release ${{ github.event.release.tag_name }}'
           linear-issue-body: ${{ github.event.release.body }}
           linear-attachment-url: ${{ github.event.release.html_url }}
           linear-label-release-tag: ${{ github.event.release.tag_name }}

@@ -1,8 +1,8 @@
 import { setFailed, setOutput } from '@actions/core';
 
 import { LinearClient } from '@linear/sdk';
-import { createReleaseIssue } from 'src/createReleaseIssue';
-import { LINEAR_API_KEY } from 'src/config';
+import { createReleaseIssue } from './createReleaseIssue';
+import { LINEAR_API_KEY } from './config';
 
 (async () => {
   try {

@@ -32,7 +32,7 @@ outputs:
   linear-release-issue-title:
     description: 'The title of created Linear issue'
 runs:
-  using: 'node20'
+  using: 'node24'
   main: 'dist/index.js'
 branding:
   icon: 'link'
